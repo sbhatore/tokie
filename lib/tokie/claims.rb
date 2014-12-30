@@ -21,6 +21,10 @@ module Tokie
       raise ArgumentError, "unknown version: #{version}"
     end
 
+    def verify!(claims, options = {})
+      version(claims['ver']).verify!(claims, options)
+    end
+
     class V1
       attr_reader :payload, :purpose, :expires_at
 
@@ -28,6 +32,7 @@ module Tokie
         @payload = payload
         @purpose = self.class.pick_purpose(options)
         @expires_at = pick_expiration(options)
+        @version = self.class.name.split('::').last
       end
 
       class << self
@@ -60,7 +65,7 @@ module Tokie
       end
 
       def to_h
-        { 'pld' => @payload, 'for' => @purpose.to_s }.tap do |claims|
+        { 'pld' => @payload, 'for' => @purpose.to_s, 'ver' => @version }.tap do |claims|
           claims['exp'] = @expires_at.utc.iso8601(3) if @expires_at
         end
       end

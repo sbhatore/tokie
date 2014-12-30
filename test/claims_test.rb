@@ -7,7 +7,7 @@ class ClaimsTest < ActiveSupport::TestCase
   end
 
   test 'as hash' do
-    exp = { 'pld' => 'payload', 'for' => 'test' }
+    exp = { 'pld' => 'payload', 'for' => 'test', 'ver' => 'V1' }
     assert_equal exp, @claims.to_h
   end
 end
@@ -149,6 +149,14 @@ class ClaimsVersioningTest < ActiveSupport::TestCase
     end
   end
 
+  test "verify! dispatches to version class" do
+    assert Tokie::Claims.verify! 'ver' => 'V1', 'pld' => 'hello', 'for' => 'universal'
+
+    assert_raise ArgumentError do
+      Tokie::Claims.verify! 'ver' => 'unknown', 'pld' => 'fail me', 'for' => 'universal'
+    end
+  end
+
   test "versioning" do
     class Tokie::Claims::V200
       def self.verify!(data, options = {})
@@ -158,8 +166,8 @@ class ClaimsVersioningTest < ActiveSupport::TestCase
 
     assert_equal Tokie::Claims::V200, Tokie::Claims.version(:V200)
 
-    Tokie::Claims.stub(:latest_version, :V200) do
-      assert_equal '2.0: Much faster! Very lazy!', Tokie::Claims.verify!('something')
+    Tokie::Claims.verify!('ver' => 'V200', 'pld' => 'hello', 'for' => 'universal').tap do |act|
+      assert_equal '2.0: Much faster! Very lazy!', act
     end
   end
 end
